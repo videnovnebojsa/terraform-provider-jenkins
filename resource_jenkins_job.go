@@ -44,11 +44,69 @@ func resourceJenkinsJob() *schema.Resource {
 					"URL pointing to a text file (http://... or https://...), or as filesystem URL (file://...).",
 				Required: true,
 			},
-			"parameters": {
+			"configuration": &schema.Schema{
 				Type:        schema.TypeMap,
 				Description: "The set of parameters to be set in the template to generate a valid config.xml file.",
 				Optional:    true,
 				Elem:        schema.TypeString,
+			},
+			"parameter": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"type": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"description": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"default": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
+			"jenkinsfile": &schema.Schema{
+				Type:        schema.TypeMap,
+				Description: "Pipeline related parameters.",
+				Optional:    true,
+				Elem:        schema.TypeString,
+			},
+			"permissions": &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "List of github users to be assigned developer permissions.",
+				Optional:    true,
+			},
+			"pr_triggering_ghpr": &schema.Schema{
+				Type:        schema.TypeMap,
+				Description: "PR triggering related parameters.",
+				Optional:    true,
+				Elem:        schema.TypeString,
+			},
+			"pr_triggering_gh_integration": &schema.Schema{
+				Type:        schema.TypeMap,
+				Description: "PR triggering related parameters.",
+				Optional:    true,
+				Elem:        schema.TypeString,
+			},
+			"branch_push_triggering": &schema.Schema{
+				Type:        schema.TypeMap,
+				Description: "Triggering by pushing to a branch by using Github Integration Plugin.",
+				Optional:    true,
+				Elem:        schema.TypeString,
+			},
+			"master_merge_triggering": &schema.Schema{
+				Type:        schema.TypeBool,
+				Description: "Should this build triggered on merge to master.",
+				Optional:    true,
 			},
 			"hash": &schema.Schema{
 				Type: schema.TypeString,
@@ -203,7 +261,7 @@ func resourceJenkinsJobUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] jenkins::update - the template hash has changed? %t", templateChanged)
 
 	// at this point job has been initialised
-	if d.HasChange("display_name") || d.HasChange("description") || d.HasChange("disabled") || d.HasChange("template") || d.HasChange("parameters") || d.HasChange("hash") || templateChanged {
+	if d.HasChange("display_name") || d.HasChange("description") || d.HasChange("disabled") || d.HasChange("template") || d.HasChange("parameter") || d.HasChange("configuration") || d.HasChange("pr_triggering_ghpr") || d.HasChange("pr_triggering_gh_integration") || d.HasChange("master_merge_triggering") || d.HasChange("branch_push_triggering") || d.HasChange("jenkinsfile") || d.HasChange("jenkinsfile") || d.HasChange("hash") || templateChanged {
 		name := d.Get("name").(string)
 
 		xml, err := cxt.BindTo(d)
@@ -224,7 +282,14 @@ func resourceJenkinsJobUpdate(d *schema.ResourceData, meta interface{}) error {
 		d.SetPartial("description")
 		d.SetPartial("disabled")
 		d.SetPartial("template")
-		d.SetPartial("parameters")
+		d.SetPartial("configuration")
+		d.SetPartial("parameter")
+		d.SetPartial("jenkinsfile")
+		d.SetPartial("permissions")
+		d.SetPartial("pr_triggering_ghpr")
+		d.SetPartial("pr_triggering_gh_integration")
+		d.SetPartial("master_merge_triggering")
+		d.SetPartial("branch_push_triggering")
 	}
 	d.Partial(false)
 	return nil

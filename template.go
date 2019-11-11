@@ -130,18 +130,32 @@ func (c *ConfigXMLTemplate) BindTo(d *schema.ResourceData) (string, error) {
 	// Job contains all the data pertaining to a Jenkins job, in a format that is
 	// easy to use with Golang text/templates
 	type job struct {
-		Name        string
-		Description string
-		DisplayName string
-		Disabled    bool
-		Parameters  map[string]string
+		Name                      string
+		Description               string
+		DisplayName               string
+		Disabled                  bool
+		MasterMergeTriggering     bool
+		Permissions               []string
+		Parameters                []map[string]string
+		BranchPushTriggering      map[string]string
+		PrTriggeringGhpr          map[string]string
+		PrTriggeringGhIntegration map[string]string
+		Jenkinsfile               map[string]string
+		Configuration             map[string]string
 	}
 
 	// now copy the input parameters into a data structure that is compatible
 	// with the config.xml template
 	j := &job{
-		Name:       d.Get("name").(string),
-		Parameters: map[string]string{},
+		Name:                      d.Get("name").(string),
+		Permissions:               []string{},
+		Configuration:             map[string]string{},
+		Jenkinsfile:               map[string]string{},
+		Parameters:                []map[string]string{},
+		PrTriggeringGhpr:          map[string]string{},
+		PrTriggeringGhIntegration: map[string]string{},
+		BranchPushTriggering:      map[string]string{},
+		MasterMergeTriggering:     false,
 	}
 	if value, ok := d.GetOk("display_name"); ok {
 		j.DisplayName = value.(string)
@@ -152,10 +166,71 @@ func (c *ConfigXMLTemplate) BindTo(d *schema.ResourceData) (string, error) {
 	if value, ok := d.GetOk("disabled"); ok {
 		j.Disabled = value.(bool)
 	}
-	if value, ok := d.GetOk("parameters"); ok {
+	if value, ok := d.GetOk("master_merge_triggering"); ok {
+		j.MasterMergeTriggering = value.(bool)
+	}
+	if value, ok := d.GetOk("permissions"); ok {
+		value := value.(string)
+		elems := strings.Split(value, ",")
+		for _, v := range elems {
+			j.Permissions = append(j.Permissions, v)
+		}
+	}
+	if value, ok := d.GetOk("configuration"); ok {
 		value := value.(map[string]interface{})
 		for k, v := range value {
-			j.Parameters[k] = v.(string)
+			j.Configuration[k] = v.(string)
+		}
+	}
+	if value, ok := d.GetOk("pr_triggering_ghpr"); ok {
+		value := value.(map[string]interface{})
+		for k, v := range value {
+			j.PrTriggeringGhpr[k] = v.(string)
+		}
+	}
+	if value, ok := d.GetOk("pr_triggering_gh_integration"); ok {
+		value := value.(map[string]interface{})
+		for k, v := range value {
+			j.PrTriggeringGhIntegration[k] = v.(string)
+		}
+	}
+	if value, ok := d.GetOk("parameter"); ok {
+		fmt.Println(value)
+		rawValue := value.([]interface{})
+
+		for _, v := range rawValue {
+			configRaw := v.(map[string]interface{})
+			config := make(map[string]string)
+
+			if t, ok := configRaw["type"]; ok {
+				config["Type"] = t.(string)
+			}
+
+			if name, ok := configRaw["name"]; ok {
+				config["Name"] = name.(string)
+			}
+
+			if description, ok := configRaw["description"]; ok {
+				config["Description"] = description.(string)
+			}
+
+			if d, ok := configRaw["default"]; ok {
+				config["Default"] = d.(string)
+			}
+
+			j.Parameters = append(j.Parameters, config)
+		}
+	}
+	if value, ok := d.GetOk("branch_push_triggering"); ok {
+		value := value.(map[string]interface{})
+		for k, v := range value {
+			j.BranchPushTriggering[k] = v.(string)
+		}
+	}
+	if value, ok := d.GetOk("jenkinsfile"); ok {
+		value := value.(map[string]interface{})
+		for k, v := range value {
+			j.Jenkinsfile[k] = v.(string)
 		}
 	}
 
