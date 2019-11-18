@@ -133,6 +133,7 @@ func (c *ConfigXMLTemplate) BindTo(d *schema.ResourceData) (string, error) {
 		Name                      string
 		Description               string
 		DisplayName               string
+		TriggerRemotelyToken      string
 		Disabled                  bool
 		MasterMergeTriggering     bool
 		Permissions               []string
@@ -162,6 +163,9 @@ func (c *ConfigXMLTemplate) BindTo(d *schema.ResourceData) (string, error) {
 	}
 	if value, ok := d.GetOk("description"); ok {
 		j.Description = value.(string)
+	}
+	if value, ok := d.GetOk("trigger_remotely_token"); ok {
+		j.TriggerRemotelyToken = value.(string)
 	}
 	if value, ok := d.GetOk("disabled"); ok {
 		j.Disabled = value.(bool)

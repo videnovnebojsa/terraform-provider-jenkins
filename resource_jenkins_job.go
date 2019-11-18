@@ -33,6 +33,11 @@ func resourceJenkinsJob() *schema.Resource {
 				Description: "The (optional) description of the JenkinsCI job.",
 				Optional:    true,
 			},
+			"trigger_remotely_token": &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "Value of the token for remotely triggered job.",
+				Optional:    true,
+			},
 			"disabled": &schema.Schema{
 				Type:        schema.TypeBool,
 				Description: "When this option is checked, no new builds of this project will be executed.",
@@ -261,7 +266,7 @@ func resourceJenkinsJobUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] jenkins::update - the template hash has changed? %t", templateChanged)
 
 	// at this point job has been initialised
-	if d.HasChange("display_name") || d.HasChange("description") || d.HasChange("disabled") || d.HasChange("template") || d.HasChange("parameter") || d.HasChange("configuration") || d.HasChange("pr_triggering_ghpr") || d.HasChange("pr_triggering_gh_integration") || d.HasChange("master_merge_triggering") || d.HasChange("branch_push_triggering") || d.HasChange("jenkinsfile") || d.HasChange("jenkinsfile") || d.HasChange("hash") || templateChanged {
+	if d.HasChange("display_name") || d.HasChange("description") || d.HasChange("disabled") || d.HasChange("trigger_remotely_token") || d.HasChange("template") || d.HasChange("parameter") || d.HasChange("configuration") || d.HasChange("pr_triggering_ghpr") || d.HasChange("pr_triggering_gh_integration") || d.HasChange("master_merge_triggering") || d.HasChange("branch_push_triggering") || d.HasChange("jenkinsfile") || d.HasChange("jenkinsfile") || d.HasChange("hash") || templateChanged {
 		name := d.Get("name").(string)
 
 		xml, err := cxt.BindTo(d)
@@ -290,6 +295,7 @@ func resourceJenkinsJobUpdate(d *schema.ResourceData, meta interface{}) error {
 		d.SetPartial("pr_triggering_gh_integration")
 		d.SetPartial("master_merge_triggering")
 		d.SetPartial("branch_push_triggering")
+		d.SetPartial("trigger_remotely_token")
 	}
 	d.Partial(false)
 	return nil
